@@ -63,8 +63,8 @@ importers:
         specifier: 15.5.25
         version: 15.5.25(eslint@9.39.5(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3)
       lucide-static:
-        specifier: 1.40.0
-        version: 1.40.0
+        specifier: 1.41.0
+        version: 1.41.0
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -1545,8 +1545,8 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
-  lucide-static@1.40.0:
-    resolution: {integrity: sha512-ln37Ng6A709exLQH4pBxrbl6FAUk/ZBLTJnLrj02HN/Bb84eUGzlA2JjMglScI0TEab6vH2UVs0hm4vGgLzTrQ==}
+  lucide-static@1.41.0:
+    resolution: {integrity: sha512-39fX7SH+Rwis0oUmLLOipOoFSiJll9yi2DyEGDaE7Sp0qQAEhEfMQ2scQNdWKeGVENGv1uXc5ZeZqBWsuhQSFg==}
 
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
@@ -3723,7 +3723,7 @@ snapshots:
     dependencies:
       js-tokens: 4.0.0
 
-  lucide-static@1.40.0: {}
+  lucide-static@1.41.0: {}
 
   math-intrinsics@1.1.0: {}
 
