@@ -1,0 +1,152 @@
+name: build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+    inputs:
+      run_all:
+        description: Run verification for every service
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      fx_service: ${{ steps.filter.outputs.fx_service }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+
+    steps:
+      - if: ${{ !inputs.run_all }}
+        uses: actions/checkout@v7
+
+      - if: ${{ !inputs.run_all }}
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            backend:
+              - "legacy/api-jvm/**"
+              - ".github/workflows/build.yml"
+              - ".github/workflows/build-and-push.yml"
+
+            fx_service:
+              - "legacy/fx-service/**"
+              - ".github/workflows/build.yml"
+              - ".github/workflows/build-and-push.yml"
+
+            frontend:
+              - "apps/web/**"
+              - "packages/**"
+              - "pnpm-lock.yaml"
+              - "amplify.yml"
+              - ".github/workflows/build.yml"
+              - ".github/workflows/build-and-push.yml"
+
+  backend:
+    needs: changes
+    if: ${{ inputs.run_all || needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: legacy/api-jvm
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - run: chmod +x gradlew
+
+      - run: ./gradlew build --no-daemon
+
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-test-report
+          path: legacy/api-jvm/build/reports/tests/test
+          retention-days: 7
+
+  fx-service:
+    needs: changes
+    if: ${{ inputs.run_all || needs.changes.outputs.fx_service == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: legacy/fx-service
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: legacy/fx-service/requirements-dev.txt
+
+      - run: pip install -r requirements-dev.txt
+
+      - run: python -m pytest -q
+
+  frontend:
+    needs: changes
+    if: ${{ inputs.run_all || needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      AWS_REGION: us-east-1
+      COGNITO_USER_POOL_ID: us-east-1_ci
+      COGNITO_APP_CLIENT_ID: ci-client
+      APP_ENV: dev
+      BACKEND_API_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+
+      - run: pnpm run lint
+
+      - run: pnpm run build
+
+  verified:
+    if: always()
+    needs: [changes, backend, fx-service, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for r in ${{ join(needs.*.result, ' ') }}; do
+            case "$r" in
+              success|skipped) ;;
+              *) echo "a needed job reported $r"; exit 1 ;;
+            esac
+          done
+          echo "all needed jobs succeeded or were skipped"
