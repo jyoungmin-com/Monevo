@@ -11,7 +11,7 @@ public record JournalEntryUpdateRequest(
 	LocalDate entryDate,
 	@Size(max = 200) String description,
 	String memo,
-	@Size(min = 2, max = 20) List<@Valid JournalLineInput> lines,
+	@Size(min = 2, max = 191) List<@Valid JournalLineInput> lines,
 	@NotNull Long version
 ) {
 }

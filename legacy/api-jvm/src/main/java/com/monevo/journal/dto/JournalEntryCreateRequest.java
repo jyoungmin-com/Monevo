@@ -15,6 +15,6 @@ public record JournalEntryCreateRequest(
 	@NotNull LocalDate entryDate,
 	@NotBlank @Size(max = 200) String description,
 	String memo,
-	@NotNull @Size(min = 2, max = 20) List<@Valid JournalLineInput> lines
+	@NotNull @Size(min = 2, max = 191) List<@Valid JournalLineInput> lines
 ) {
 }
